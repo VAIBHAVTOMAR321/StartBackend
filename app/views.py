@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from app.permissions import IsAdminUserCustom
 
-from .models import Feedback, PhoneOTP, Registration,Place, Hotel
+from .models import Booking, Feedback, PhoneOTP, Registration,Place, Hotel
 from .serializers import (
     RegisterUserSerializer,
     LoginUserSerializer,
@@ -17,6 +17,7 @@ from .serializers import (
     PlaceSerializer,
     HotelSerializer,
     FeedbackSerializer,
+    BookingSerializer,
 )
 
 from rest_framework.views import APIView
@@ -726,4 +727,152 @@ class FeedbackDetailAPIView(APIView):
         return Response({
             "status": True,
             "message": "Feedback deleted successfully"
+        }, status=status.HTTP_200_OK)
+    
+# ================= BOOKING APIs =================
+
+class BookingAPIView(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    # ADMIN & USER BOTH CAN GET
+    def get(self, request):
+
+        # ADMIN -> ALL BOOKINGS
+        if request.user.role == "admin":
+
+            bookings = Booking.objects.all().order_by("-id")
+
+        else:
+            # USER -> ONLY OWN BOOKINGS
+            bookings = Booking.objects.filter(
+                user_id=request.user.user_id
+            ).order_by("-id")
+
+        serializer = BookingSerializer(
+            bookings,
+            many=True
+        )
+
+        return Response({
+            "status": True,
+            "message": "Bookings fetched successfully",
+            "data": serializer.data
+        }, status=status.HTTP_200_OK)
+
+    # ONLY USER CAN BOOK
+    def post(self, request):
+
+        if request.user.role != "user":
+
+            return Response({
+                "status": False,
+                "message": "Only users can create booking"
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = BookingSerializer(
+            data=request.data
+        )
+
+        if serializer.is_valid():
+
+            serializer.save()
+
+            return Response({
+                "status": True,
+                "message": "Booking created successfully"
+            }, status=status.HTTP_201_CREATED)
+
+        return Response({
+            "status": False,
+            "errors": serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+
+# BOOKING UPDATE & DELETE
+class BookingDetailAPIView(APIView):
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, pk):
+
+        try:
+            return Booking.objects.get(id=pk)
+
+        except Booking.DoesNotExist:
+            return None
+
+    # USER & ADMIN BOTH CAN UPDATE
+    def put(self, request, pk):
+
+        booking = self.get_object(pk)
+
+        if not booking:
+
+            return Response({
+                "status": False,
+                "message": "Booking not found"
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # USER CAN UPDATE ONLY OWN BOOKING
+        if (
+            request.user.role == "user"
+            and booking.user_id.user_id != request.user.user_id
+        ):
+
+            return Response({
+                "status": False,
+                "message": "You can update only your booking"
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = BookingSerializer(
+            booking,
+            data=request.data,
+            partial=True
+        )
+
+        if serializer.is_valid():
+
+            serializer.save()
+
+            return Response({
+                "status": True,
+                "message": "Booking updated successfully"
+            }, status=status.HTTP_200_OK)
+
+        return Response({
+            "status": False,
+            "errors": serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    # USER & ADMIN BOTH CAN DELETE
+    def delete(self, request, pk):
+
+        booking = self.get_object(pk)
+
+        if not booking:
+
+            return Response({
+                "status": False,
+                "message": "Booking not found"
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # USER CAN DELETE ONLY OWN BOOKING
+        if (
+            request.user.role == "user"
+            and booking.user != request.user
+        ):
+
+            return Response({
+                "status": False,
+                "message": "You can delete only your booking"
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        booking.delete()
+
+        return Response({
+            "status": True,
+            "message": "Booking deleted successfully"
         }, status=status.HTTP_200_OK)

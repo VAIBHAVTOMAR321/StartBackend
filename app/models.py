@@ -192,3 +192,57 @@ class Feedback(models.Model):
     def __str__(self):
 
         return self.user_id
+
+# BOOKING MODEL
+class Booking(models.Model):
+
+    user_id = models.ForeignKey(
+        Registration,
+        to_field="user_id",
+        on_delete=models.CASCADE,
+        related_name="bookings"
+    )
+
+    place = models.ForeignKey(
+        Place,
+        on_delete=models.CASCADE
+    )
+
+    hotel = models.ForeignKey(
+        Hotel,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+
+    person_name = models.CharField(max_length=200)
+
+    identity_document = models.ImageField(
+        upload_to="identity_documents/",blank=True, null=True
+    )
+
+    total_people = models.IntegerField(default=1)
+
+    booking_date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+
+        return f"{self.person_name} - {self.place.place_name}"
+
+
+# BOOKING MEMBERS MODEL
+class BookingMember(models.Model):
+
+    booking = models.ForeignKey(
+        Booking,
+        on_delete=models.CASCADE,
+        related_name="members"
+    )
+
+    member_name = models.CharField(max_length=200)
+
+    aadhaar_number = models.CharField(max_length=12)
+
+    def __str__(self):
+
+        return self.member_name

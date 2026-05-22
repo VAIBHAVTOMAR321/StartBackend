@@ -12,6 +12,8 @@ from .views import (
     PlaceDetailAPIView,
     HotelAPIView,
     HotelDetailAPIView,
+    BookingAPIView,
+    BookingDetailAPIView,
 )
 
 urlpatterns = [
@@ -30,6 +32,9 @@ urlpatterns = [
     # Feedback API
     path("feedback/", FeedbackAPIView.as_view()),
     path("feedback/<int:pk>/", FeedbackDetailAPIView.as_view()),
+    # Booking API
+    path("booking/", BookingAPIView.as_view()),
+    path("booking/<int:pk>/", BookingDetailAPIView.as_view()),
 
 
 ]

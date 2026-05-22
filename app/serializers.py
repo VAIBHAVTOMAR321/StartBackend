@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Feedback, Registration, PhoneOTP, Place, Hotel
+from .models import Booking, BookingMember, Feedback, Registration, PhoneOTP, Place, Hotel
 
 
 # ---------------- REGISTER ----------------
@@ -102,3 +102,105 @@ class FeedbackSerializer(serializers.ModelSerializer):
         read_only_fields = [
             "is_valid"
         ]
+
+class BookingMemberSerializer(serializers.ModelSerializer):
+
+    class Meta:
+
+        model = BookingMember
+
+        fields = [
+            "id",
+            "member_name",
+            "aadhaar_number"
+        ]
+
+
+class BookingSerializer(serializers.ModelSerializer):
+
+    members = BookingMemberSerializer(
+        many=True
+    )
+
+    class Meta:
+
+        model = Booking
+
+        fields = [
+            "id",
+            "user_id",
+            "place",
+            "hotel",
+            "person_name",
+            "identity_document",
+            "total_people",
+            "booking_date",
+            "members"
+        ]
+
+    def create(self, validated_data):
+
+        members_data = validated_data.pop("members")
+
+        booking = Booking.objects.create(**validated_data)
+
+        for member in members_data:
+
+            BookingMember.objects.create(
+                booking=booking,
+                **member
+            )
+
+        return booking
+
+    def update(self, instance, validated_data):
+
+        members_data = validated_data.pop(
+            "members",
+            None
+        )
+
+        instance.user_id = validated_data.get(
+            "user_id",
+            instance.user_id
+        )
+
+        instance.place = validated_data.get(
+            "place",
+            instance.place
+        )
+
+        instance.hotel = validated_data.get(
+            "hotel",
+            instance.hotel
+        )
+
+        instance.person_name = validated_data.get(
+            "person_name",
+            instance.person_name
+        )
+
+        instance.identity_document = validated_data.get(
+            "identity_document",
+            instance.identity_document
+        )
+
+        instance.total_people = validated_data.get(
+            "total_people",
+            instance.total_people
+        )
+
+        instance.save()
+
+        if members_data is not None:
+
+            instance.members.all().delete()
+
+            for member in members_data:
+
+                BookingMember.objects.create(
+                    booking=instance,
+                    **member
+                )
+
+        return instance
