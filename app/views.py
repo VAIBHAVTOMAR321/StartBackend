@@ -401,9 +401,15 @@ class RefreshTokenAPI(APIView):
         
 class PlaceAPIView(APIView):
 
-    # GET FOR ALL USERS & ADMIN
-    authentication_classes = []
-    permission_classes = []
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return []
+        return [IsAdminUserCustom()]
+
+    def get_authenticators(self):
+        if self.request.method == 'GET':
+            return []
+        return [JWTAuthentication()]
 
     def get(self, request):
 
@@ -419,10 +425,6 @@ class PlaceAPIView(APIView):
             "message": "Places fetched successfully",
             "data": serializer.data
         }, status=status.HTTP_200_OK)
-
-    # ONLY ADMIN CAN ADD PLACE
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAdminUserCustom]
 
     def post(self, request):
 
@@ -509,6 +511,9 @@ class PlaceDetailAPIView(APIView):
 
 # HOTEL POST & GET
 class HotelAPIView(APIView):
+
+    authentication_classes = []
+    permission_classes = []
 
     # GET ALL HOTELS
     def get(self, request):
