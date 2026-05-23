@@ -91,19 +91,30 @@ class PlaceSerializer(serializers.ModelSerializer):
 
 class FeedbackSerializer(serializers.ModelSerializer):
 
+    user_name = serializers.SerializerMethodField()
+
     class Meta:
         model = Feedback
 
         fields = [
             "id",
             "user_id",
+            "user_name",
             "feedback",
             "is_valid"
         ]
 
         read_only_fields = [
+            "user_id",
             "is_valid"
         ]
+
+    def get_user_name(self, obj):
+        try:
+            user = Registration.objects.get(user_id=obj.user_id)
+            return user.name
+        except Registration.DoesNotExist:
+            return None
 
 class BookingMemberSerializer(serializers.ModelSerializer):
 

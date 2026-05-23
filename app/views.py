@@ -614,9 +614,15 @@ class HotelDetailAPIView(APIView):
 # ================= FEEDBACK APIs =================
 
 class FeedbackAPIView(APIView):
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return []
+        return [IsAuthenticated()]
 
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    def get_authenticators(self):
+        if self.request.method == 'GET':
+            return []
+        return [JWTAuthentication()]
 
     # GET ALL FEEDBACK
     def get(self, request):
@@ -649,7 +655,8 @@ class FeedbackAPIView(APIView):
         if serializer.is_valid():
 
             serializer.save(
-                is_valid=False
+                is_valid=False,
+                user_id=request.user.user_id
             )
 
             return Response({
@@ -666,8 +673,15 @@ class FeedbackAPIView(APIView):
 # UPDATE & DELETE FEEDBACK
 class FeedbackDetailAPIView(APIView):
 
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return []
+        return [IsAuthenticated()]
+
+    def get_authenticators(self):
+        if self.request.method == 'GET':
+            return []
+        return [JWTAuthentication()]
 
     def get_object(self, pk):
 
