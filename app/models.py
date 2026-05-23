@@ -216,7 +216,7 @@ class Booking(models.Model):
     )
 
     person_name = models.CharField(max_length=200)
-
+    total_price = models.CharField(max_length=200)
     identity_document = models.ImageField(
         upload_to="identity_documents/",blank=True, null=True
     )

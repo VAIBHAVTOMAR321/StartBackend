@@ -1,3 +1,5 @@
+import json
+
 from rest_framework import serializers
 from .models import Booking, BookingMember, Feedback, Registration, PhoneOTP, Place, Hotel
 
@@ -106,9 +108,7 @@ class FeedbackSerializer(serializers.ModelSerializer):
 class BookingMemberSerializer(serializers.ModelSerializer):
 
     class Meta:
-
         model = BookingMember
-
         fields = [
             "id",
             "member_name",
@@ -119,7 +119,8 @@ class BookingMemberSerializer(serializers.ModelSerializer):
 class BookingSerializer(serializers.ModelSerializer):
 
     members = BookingMemberSerializer(
-        many=True
+        many=True,
+        required=False
     )
 
     class Meta:
@@ -134,13 +135,36 @@ class BookingSerializer(serializers.ModelSerializer):
             "person_name",
             "identity_document",
             "total_people",
+            "total_price",
             "booking_date",
             "members"
         ]
 
+
+    def to_internal_value(self, data):
+
+        # IMPORTANT FIX
+        data = data.dict()
+
+        members = data.get("members")
+
+        if members and isinstance(members, str):
+
+            try:
+                data["members"] = json.loads(members)
+
+            except Exception:
+
+                raise serializers.ValidationError({
+                    "members": "Invalid JSON format"
+                })
+
+        return super().to_internal_value(data)
+
+
     def create(self, validated_data):
 
-        members_data = validated_data.pop("members")
+        members_data = validated_data.pop("members", [])
 
         booking = Booking.objects.create(**validated_data)
 
@@ -188,6 +212,11 @@ class BookingSerializer(serializers.ModelSerializer):
         instance.total_people = validated_data.get(
             "total_people",
             instance.total_people
+        )
+
+        instance.total_price = validated_data.get(
+            "total_price",
+            instance.total_price
         )
 
         instance.save()
