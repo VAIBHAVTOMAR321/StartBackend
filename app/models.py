@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
-
+from django.utils import timezone
 
 class RegistrationManager(BaseUserManager):
 
@@ -140,6 +140,8 @@ class Place(models.Model):
     )
 
     description = models.TextField()
+    booking_date = models.DateTimeField(blank=True, null=True)
+    booking_time = models.DateTimeField(blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -222,9 +224,8 @@ class Booking(models.Model):
     )
 
     total_people = models.IntegerField(default=1)
-
-    booking_date = models.DateTimeField(auto_now_add=True)
-
+    status = models.CharField(max_length=20, default="pending")
+    date_of_booking = models.DateTimeField(blank=True, null=True)
     def __str__(self):
 
         return f"{self.person_name} - {self.place.place_name}"

@@ -832,6 +832,13 @@ class BookingDetailAPIView(APIView):
                 "message": "You can update only your booking"
             }, status=status.HTTP_403_FORBIDDEN)
 
+        # ONLY ADMIN CAN UPDATE STATUS
+        if "status" in request.data and request.user.role != "admin":
+            return Response({
+                "status": False,
+                "message": "Only admins can update booking status"
+            }, status=status.HTTP_403_FORBIDDEN)
+
         serializer = BookingSerializer(
             booking,
             data=request.data,
@@ -840,7 +847,11 @@ class BookingDetailAPIView(APIView):
 
         if serializer.is_valid():
 
-            serializer.save()
+            # Automatically set the booking date if not provided
+            serializer.save(
+                user_id=request.user,
+                date_of_booking=timezone.now()
+            )
 
             return Response({
                 "status": True,
@@ -867,7 +878,7 @@ class BookingDetailAPIView(APIView):
         # USER CAN DELETE ONLY OWN BOOKING
         if (
             request.user.role == "user"
-            and booking.user != request.user
+            and booking.user_id != request.user
         ):
 
             return Response({

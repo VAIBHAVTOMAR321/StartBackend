@@ -123,6 +123,17 @@ class BookingSerializer(serializers.ModelSerializer):
         required=False
     )
 
+    # ADD THESE
+    place_name = serializers.CharField(
+        source="place.place_name",
+        read_only=True
+    )
+
+    hotel_name = serializers.CharField(
+        source="hotel.hotel_name",
+        read_only=True
+    )
+
     class Meta:
 
         model = Booking
@@ -130,21 +141,33 @@ class BookingSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "user_id",
+
             "place",
+            "place_name",   # ADD THIS
+
             "hotel",
+            "hotel_name",   # ADD THIS
+
             "person_name",
             "identity_document",
             "total_people",
             "total_price",
-            "booking_date",
-            "members"
+            "members",
+            "status",
+            "date_of_booking"
         ]
 
+        read_only_fields = [
+            "date_of_booking"
+        ]
 
     def to_internal_value(self, data):
 
-        # IMPORTANT FIX
-        data = data.dict()
+        # Support both QueryDict (Form-data) and standard dict (JSON)
+        if hasattr(data, 'dict'):
+            data = data.dict()
+        else:
+            data = data.copy()
 
         members = data.get("members")
 
@@ -176,6 +199,7 @@ class BookingSerializer(serializers.ModelSerializer):
             )
 
         return booking
+
 
     def update(self, instance, validated_data):
 
@@ -217,6 +241,11 @@ class BookingSerializer(serializers.ModelSerializer):
         instance.total_price = validated_data.get(
             "total_price",
             instance.total_price
+        )
+
+        instance.status = validated_data.get(
+            "status",
+            instance.status
         )
 
         instance.save()
